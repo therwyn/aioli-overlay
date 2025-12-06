@@ -1,18 +1,8 @@
-// Pokemon Shiny Hunt Tracker JavaScript
+// Aioli Overlay JavaScript
 
-let counterValue = 0;
-let failedCatchesValue = 0;
-let pokemonImagePath = '';
-let lastShinyImagePath = '';
-let livingDexCountValue = 0;
-let livingDexTotalValue = 0;
-let sectionConfig = {
-    currentHunt: true,
-    failedAttempts: false,
-    lastShiny: true,
-    livingDex: false,
-};
+let sectionsConfig = [];
 const pollingIntervals = [];
+const sectionData = new Map(); // Store data for each section by index
 
 function clearPollingIntervals() {
     while (pollingIntervals.length) {
@@ -20,271 +10,342 @@ function clearPollingIntervals() {
     }
 }
 
-function toggleSection(sectionId, isEnabled) {
-    const sectionElement = document.getElementById(sectionId);
-    if (sectionElement) {
-        sectionElement.style.display = isEnabled ? '' : 'none';
-    }
-}
-
-function applySectionConfig() {
-    toggleSection('current-hunt-section', sectionConfig.currentHunt);
-    toggleSection('failed-attempts-section', sectionConfig.failedAttempts);
-    toggleSection('last-shiny-section', sectionConfig.lastShiny);
-    toggleSection('living-dex-section', sectionConfig.livingDex);
-
-    if (sectionConfig.livingDex) {
-        updateLivingDexDisplay();
-    }
-}
-
-async function fetchSectionConfig() {
+// Fetch sections configuration from server
+async function fetchSectionsConfig() {
     try {
-        const response = await fetch('/api/config/sections');
+        const response = await fetch('/api/sections');
         if (response.ok) {
             const data = await response.json();
-            if (data && data.sections) {
-                sectionConfig = { ...sectionConfig, ...data.sections };
-                applySectionConfig();
+            if (data && Array.isArray(data.sections)) {
+                sectionsConfig = data.sections;
+                return true;
             }
         } else {
-            console.error('Failed to fetch section config:', response.statusText);
-            applySectionConfig();
+            console.error('Failed to fetch sections config:', response.statusText);
         }
     } catch (error) {
-        console.error('Error fetching section config:', error);
-        applySectionConfig();
+        console.error('Error fetching sections config:', error);
     }
+    return false;
 }
 
-// Function to fetch counter value from server
-async function fetchCounter() {
-    if (!sectionConfig.currentHunt) {
-        return;
-    }
+// Generic function to fetch counter value from a file path
+async function fetchCounter(filePath, sectionIndex, counterKey) {
     try {
-        const response = await fetch('/api/counter');
+        const response = await fetch(`/api/counter?path=${encodeURIComponent(filePath)}`);
         if (response.ok) {
             const data = await response.json();
             const newCount = parseInt(data.count) || 0;
-            if (newCount !== counterValue) {
-                counterValue = newCount;
-                updateCounterDisplay();
+            
+            if (!sectionData.has(sectionIndex)) {
+                sectionData.set(sectionIndex, {});
+            }
+            const section = sectionData.get(sectionIndex);
+            
+            if (section[counterKey] !== newCount) {
+                section[counterKey] = newCount;
+                updateCounterDisplay(sectionIndex, counterKey);
             }
         } else {
-            console.error('Failed to fetch counter:', response.statusText);
+            console.error(`Failed to fetch counter for ${filePath}:`, response.statusText);
         }
     } catch (error) {
-        console.error('Error fetching counter:', error);
+        console.error(`Error fetching counter for ${filePath}:`, error);
     }
 }
 
-// Function to fetch failed catches counter from server
-async function fetchFailedCatches() {
-    if (!sectionConfig.failedAttempts) {
-        return;
-    }
+// Generic function to fetch image path
+async function fetchImage(filePath, sectionIndex) {
     try {
-        const response = await fetch('/api/failed-catches');
+        const response = await fetch(`/api/image?path=${encodeURIComponent(filePath)}`);
         if (response.ok) {
             const data = await response.json();
-            const newCount = parseInt(data.count) || 0;
-            if (newCount !== failedCatchesValue) {
-                failedCatchesValue = newCount;
-                updateFailedCatchesDisplay();
+            const imagePath = data.imagePath || '';
+            
+            if (!sectionData.has(sectionIndex)) {
+                sectionData.set(sectionIndex, {});
+            }
+            const section = sectionData.get(sectionIndex);
+            
+            if (section.imagePath !== imagePath) {
+                section.imagePath = imagePath;
+                updateImageDisplay(sectionIndex);
             }
         } else {
-            console.error('Failed to fetch failed catches:', response.statusText);
+            console.error(`Failed to fetch image for ${filePath}:`, response.statusText);
         }
     } catch (error) {
-        console.error('Error fetching failed catches:', error);
+        console.error(`Error fetching image for ${filePath}:`, error);
     }
 }
 
-// Function to fetch Pokemon image info from server
-async function fetchPokemonInfo() {
-    if (!sectionConfig.currentHunt) {
-        return;
-    }
-    try {
-        const response = await fetch('/api/pokemon');
-        if (response.ok) {
-            const data = await response.json();
-            if (data.imagePath !== pokemonImagePath) {
-                pokemonImagePath = data.imagePath;
-                updatePokemonImage();
-            }
-        } else {
-            console.error('Failed to fetch Pokemon info:', response.statusText);
-        }
-    } catch (error) {
-        console.error('Error fetching Pokemon info:', error);
-    }
-}
-
-// Function to fetch last shiny Pokemon image info from server
-async function fetchLastShinyInfo() {
-    if (!sectionConfig.lastShiny) {
-        return;
-    }
-    try {
-        const response = await fetch('/api/last-shiny');
-        if (response.ok) {
-            const data = await response.json();
-            if (data.imagePath !== lastShinyImagePath) {
-                lastShinyImagePath = data.imagePath;
-                updateLastShinyImage();
-            }
-        } else {
-            console.error('Failed to fetch last shiny info:', response.statusText);
-        }
-    } catch (error) {
-        console.error('Error fetching last shiny info:', error);
-    }
-}
-
-// Function to fetch living dex info from server
-async function fetchLivingDexInfo() {
-    if (!sectionConfig.livingDex) {
-        return;
-    }
-    try {
-        const response = await fetch('/api/living-dex');
-        if (response.ok) {
-            const data = await response.json();
-            const newCount = Number(data.count);
-            const newTotal = Number(data.total);
-
-            const normalizedCount = Number.isFinite(newCount) && newCount >= 0 ? newCount : 0;
-            const normalizedTotal = Number.isFinite(newTotal) && newTotal >= 0 ? newTotal : 0;
-
-            if (
-                normalizedCount !== livingDexCountValue ||
-                normalizedTotal !== livingDexTotalValue
-            ) {
-                livingDexCountValue = normalizedCount;
-                livingDexTotalValue = normalizedTotal;
-                updateLivingDexDisplay();
-            }
-        } else {
-            console.error('Failed to fetch living dex info:', response.statusText);
-        }
-    } catch (error) {
-        console.error('Error fetching living dex info:', error);
-    }
-}
-
-// Function to update counter display
-function updateCounterDisplay() {
-    const counterElement = document.getElementById('counter-value');
-    if (counterElement) {
-        counterElement.textContent = counterValue.toLocaleString();
-    }
-}
-
-// Function to update failed catches display
-function updateFailedCatchesDisplay() {
-    const failedCatchesElement = document.getElementById('failed-catches-value');
-    if (failedCatchesElement) {
-        failedCatchesElement.textContent = failedCatchesValue.toLocaleString();
-    }
-}
-
-// Function to update Pokemon image
-function updatePokemonImage() {
-    if (!sectionConfig.currentHunt) {
-        return;
-    }
-    const imageElement = document.getElementById('pokemon-image');
-    if (imageElement && pokemonImagePath) {
-        imageElement.src = pokemonImagePath;
-        imageElement.style.display = 'block';
-    } else if (imageElement) {
-        imageElement.style.display = 'none';
-    }
-}
-
-// Function to update last shiny Pokemon image
-function updateLastShinyImage() {
-    if (!sectionConfig.lastShiny) {
-        return;
-    }
-    const imageElement = document.getElementById('last-shiny-image');
+// Update counter display for a specific section
+function updateCounterDisplay(sectionIndex, counterKey) {
+    const section = sectionData.get(sectionIndex);
+    if (!section) return;
     
-    if (imageElement && lastShinyImagePath && lastShinyImagePath !== '') {
-        imageElement.src = lastShinyImagePath;
-        imageElement.style.visibility = 'visible';
-    } else {
-        if (imageElement) {
-            imageElement.removeAttribute('src');
-            imageElement.style.visibility = 'hidden';
+    const sectionElement = document.querySelector(`[data-section-index="${sectionIndex}"]`);
+    if (!sectionElement) return;
+    
+    const counterElement = sectionElement.querySelector(`[data-counter="${counterKey}"]`);
+    if (counterElement) {
+        const value = section[counterKey] || 0;
+        counterElement.textContent = value.toLocaleString();
+    }
+    
+    // Update ratio display if both counters exist
+    const sectionConfig = sectionsConfig[sectionIndex];
+    if (sectionConfig && sectionConfig.counter1 && sectionConfig.counter2) {
+        updateRatioDisplay(sectionIndex);
+    }
+}
+
+// Update ratio display for sections with two counters
+function updateRatioDisplay(sectionIndex) {
+    const section = sectionData.get(sectionIndex);
+    if (!section) return;
+    
+    const sectionElement = document.querySelector(`[data-section-index="${sectionIndex}"]`);
+    if (!sectionElement) return;
+    
+    const sectionConfig = sectionsConfig[sectionIndex];
+    if (!sectionConfig) return;
+    
+    const counter1Element = sectionElement.querySelector('[data-counter="counter1"]');
+    const counter2Element = sectionElement.querySelector('[data-counter="counter2"]');
+    
+    if (counter1Element) {
+        const value1 = section.counter1 || 0;
+        counter1Element.textContent = value1.toLocaleString();
+    }
+    
+    if (counter2Element) {
+        let value2;
+        // If counter2 is a number, use it directly
+        if (typeof sectionConfig.counter2 === 'number') {
+            value2 = sectionConfig.counter2;
+        } else {
+            value2 = section.counter2 || 0;
+        }
+        counter2Element.textContent = value2.toLocaleString();
+    }
+}
+
+// Update image display for a specific section
+function updateImageDisplay(sectionIndex) {
+    const section = sectionData.get(sectionIndex);
+    if (!section) return;
+    
+    const sectionElement = document.querySelector(`[data-section-index="${sectionIndex}"]`);
+    if (!sectionElement) return;
+    
+    const imageElement = sectionElement.querySelector('.section-image');
+    if (imageElement) {
+        if (section.imagePath && section.imagePath !== '') {
+            imageElement.src = section.imagePath;
+            imageElement.style.display = 'block';
+        } else {
+            imageElement.style.display = 'none';
         }
     }
 }
 
-// Function to update living dex display
-function updateLivingDexDisplay() {
-    if (!sectionConfig.livingDex) {
-        return;
-    }
-    const countElement = document.getElementById('living-dex-count');
-    const totalElement = document.getElementById('living-dex-total');
-
-    if (countElement) {
-        countElement.textContent = livingDexCountValue.toLocaleString();
-    }
-
-    if (totalElement) {
-        totalElement.textContent = livingDexTotalValue.toLocaleString();
-    }
+// Render all sections dynamically
+function renderSections() {
+    const container = document.getElementById('tracker-container');
+    if (!container) return;
+    
+    // Clear existing sections
+    container.innerHTML = '';
+    sectionData.clear();
+    
+    sectionsConfig.forEach((sectionConfig, index) => {
+        // Create section element
+        const sectionElement = document.createElement('div');
+        sectionElement.className = 'section';
+        sectionElement.setAttribute('data-section-index', index);
+        
+        // Create section title
+        const titleElement = document.createElement('div');
+        titleElement.className = 'section-title';
+        titleElement.textContent = sectionConfig.title || 'Section';
+        sectionElement.appendChild(titleElement);
+        
+        // Create section subtitle if provided
+        if (sectionConfig.subtitle && sectionConfig.subtitle !== null) {
+            const subtitleElement = document.createElement('div');
+            subtitleElement.className = 'section-subtitle';
+            subtitleElement.textContent = sectionConfig.subtitle;
+            sectionElement.appendChild(subtitleElement);
+        }
+        
+        // Determine if we need image and/or counters
+        const hasImage = sectionConfig.image && sectionConfig.image !== null;
+        const hasCounter1 = sectionConfig.counter1 && sectionConfig.counter1 !== null;
+        const hasCounter2 = sectionConfig.counter2 !== null && sectionConfig.counter2 !== null;
+        const hasTwoCounters = hasCounter1 && hasCounter2;
+        
+        // Create display container
+        let displayElement;
+        
+        if (hasImage && (hasCounter1 || hasCounter2)) {
+            // Image with counter(s) - use image-display style
+            displayElement = document.createElement('div');
+            displayElement.className = 'image-display';
+            
+            // Add image
+            const imageElement = document.createElement('img');
+            imageElement.className = 'section-sprite section-image';
+            imageElement.src = '';
+            imageElement.alt = sectionConfig.title || 'Image';
+            imageElement.style.display = 'none';
+            displayElement.appendChild(imageElement);
+            
+            // Add counter display
+            if (hasTwoCounters) {
+                const ratioDisplay = document.createElement('div');
+                ratioDisplay.className = 'ratio-display';
+                
+                const counter1Span = document.createElement('span');
+                counter1Span.setAttribute('data-counter', 'counter1');
+                counter1Span.textContent = '0';
+                ratioDisplay.appendChild(counter1Span);
+                
+                const separatorSpan = document.createElement('span');
+                separatorSpan.className = 'ratio-separator';
+                separatorSpan.textContent = sectionConfig.separator || '/';
+                ratioDisplay.appendChild(separatorSpan);
+                
+                const counter2Span = document.createElement('span');
+                counter2Span.setAttribute('data-counter', 'counter2');
+                counter2Span.textContent = '0';
+                ratioDisplay.appendChild(counter2Span);
+                
+                displayElement.appendChild(ratioDisplay);
+            } else if (hasCounter1) {
+                const counterDisplay = document.createElement('div');
+                counterDisplay.className = 'counter-display';
+                
+                const counterSpan = document.createElement('span');
+                counterSpan.setAttribute('data-counter', 'counter1');
+                counterSpan.textContent = '0';
+                counterDisplay.appendChild(counterSpan);
+                
+                displayElement.appendChild(counterDisplay);
+            }
+        } else if (hasImage) {
+            // Image only - use image-display style
+            displayElement = document.createElement('div');
+            displayElement.className = 'image-display';
+            
+            const imageElement = document.createElement('img');
+            imageElement.className = 'section-sprite section-image';
+            imageElement.src = '';
+            imageElement.alt = sectionConfig.title || 'Image';
+            imageElement.style.display = 'none';
+            displayElement.appendChild(imageElement);
+        } else if (hasTwoCounters) {
+            // Two counters - use ratio-display
+            displayElement = document.createElement('div');
+            displayElement.className = 'ratio-display';
+            
+            const counter1Span = document.createElement('span');
+            counter1Span.setAttribute('data-counter', 'counter1');
+            counter1Span.textContent = '0';
+            displayElement.appendChild(counter1Span);
+            
+            const separatorSpan = document.createElement('span');
+            separatorSpan.className = 'ratio-separator';
+            separatorSpan.textContent = sectionConfig.separator || '/';
+            displayElement.appendChild(separatorSpan);
+            
+            const counter2Span = document.createElement('span');
+            counter2Span.setAttribute('data-counter', 'counter2');
+            counter2Span.textContent = '0';
+            displayElement.appendChild(counter2Span);
+        } else if (hasCounter1) {
+            // Single counter - use counter-display
+            displayElement = document.createElement('div');
+            displayElement.className = 'counter-display';
+            
+            const counterSpan = document.createElement('span');
+            counterSpan.setAttribute('data-counter', 'counter1');
+            counterSpan.textContent = '0';
+            displayElement.appendChild(counterSpan);
+        }
+        
+        if (displayElement) {
+            sectionElement.appendChild(displayElement);
+        }
+        
+        container.appendChild(sectionElement);
+        
+        // Initialize section data
+        sectionData.set(index, {
+            counter1: 0,
+            counter2: 0,
+            imagePath: ''
+        });
+    });
 }
-
 
 // Initialize the tracker
 async function initializeTracker() {
-    console.log('Pokemon Shiny Hunt Tracker initialized');
+    console.log('Aioli Overlay initialized');
 
-    await fetchSectionConfig();
+    // Fetch sections configuration
+    const configLoaded = await fetchSectionsConfig();
+    if (!configLoaded) {
+        console.error('Failed to load sections configuration');
+        return;
+    }
+
+    // Render sections
+    renderSections();
 
     clearPollingIntervals();
 
+    // Set up initial fetches and polling for each section
     const initialFetches = [];
 
-    if (sectionConfig.currentHunt) {
-        initialFetches.push(fetchPokemonInfo());
-        initialFetches.push(fetchCounter());
-    }
+    sectionsConfig.forEach((sectionConfig, index) => {
+        // Fetch image if configured
+        if (sectionConfig.image && sectionConfig.image !== null) {
+            initialFetches.push(fetchImage(sectionConfig.image, index));
+            // Poll for image changes every 5 seconds
+            pollingIntervals.push(setInterval(() => {
+                fetchImage(sectionConfig.image, index);
+            }, 5000));
+        }
 
-    if (sectionConfig.failedAttempts) {
-        initialFetches.push(fetchFailedCatches());
-    }
+        // Fetch counter1 if configured and it's a file path
+        if (sectionConfig.counter1 && sectionConfig.counter1 !== null && typeof sectionConfig.counter1 === 'string') {
+            initialFetches.push(fetchCounter(sectionConfig.counter1, index, 'counter1'));
+            // Poll for counter1 changes every 1 second
+            pollingIntervals.push(setInterval(() => {
+                fetchCounter(sectionConfig.counter1, index, 'counter1');
+            }, 1000));
+        }
 
-    if (sectionConfig.lastShiny) {
-        initialFetches.push(fetchLastShinyInfo());
-    }
-
-    if (sectionConfig.livingDex) {
-        initialFetches.push(fetchLivingDexInfo());
-    }
+        // Fetch counter2 if configured and it's a file path (not a number)
+        if (sectionConfig.counter2 !== null && typeof sectionConfig.counter2 === 'string') {
+            initialFetches.push(fetchCounter(sectionConfig.counter2, index, 'counter2'));
+            // Poll for counter2 changes every 1 second
+            pollingIntervals.push(setInterval(() => {
+                fetchCounter(sectionConfig.counter2, index, 'counter2');
+            }, 1000));
+        } else if (typeof sectionConfig.counter2 === 'number') {
+            // If counter2 is a number, set it directly and update display
+            if (!sectionData.has(index)) {
+                sectionData.set(index, {});
+            }
+            const section = sectionData.get(index);
+            section.counter2 = sectionConfig.counter2;
+            updateRatioDisplay(index);
+        }
+    });
 
     await Promise.all(initialFetches);
-
-    if (sectionConfig.currentHunt) {
-        pollingIntervals.push(setInterval(fetchCounter, 1000)); // Update counter every second
-        pollingIntervals.push(setInterval(fetchPokemonInfo, 5000)); // Check for Pokemon changes every 5 seconds
-    }
-
-    if (sectionConfig.failedAttempts) {
-        pollingIntervals.push(setInterval(fetchFailedCatches, 1000)); // Update failed catches every second
-    }
-
-    if (sectionConfig.lastShiny) {
-        pollingIntervals.push(setInterval(fetchLastShinyInfo, 5000)); // Check for last shiny changes every 5 seconds
-    }
-
-    if (sectionConfig.livingDex) {
-        pollingIntervals.push(setInterval(fetchLivingDexInfo, 5000)); // Update living dex progress every 5 seconds
-    }
 }
 
 // Start the tracker when page loads

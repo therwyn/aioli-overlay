@@ -30,12 +30,7 @@ if (isPkg) {
 }
 
 // Configuration defaults
-const defaultSectionConfig = {
-  currentHunt: true,
-  failedAttempts: false,
-  lastShiny: true,
-  livingDex: false,
-};
+const defaultSections = [];
 
 // Helper function to resolve file paths (handles relative paths from basePath)
 function resolvePath(filePath) {
@@ -51,7 +46,7 @@ async function checkHostsEntry() {
   try {
     const hostsPath = 'C:\\Windows\\System32\\drivers\\etc\\hosts';
     const hostsContent = fs.readFileSync(hostsPath, 'utf8');
-    return hostsContent.includes('127.0.0.1 shiny.local') || hostsContent.includes('127.0.0.1\tshiny.local');
+    return hostsContent.includes('127.0.0.1 aioli.local') || hostsContent.includes('127.0.0.1\taioli.local');
   } catch (error) {
     return false;
   }
@@ -61,7 +56,7 @@ async function checkHostsEntry() {
 async function addHostsEntry() {
   try {
     const hostsPath = 'C:\\Windows\\System32\\drivers\\etc\\hosts';
-    const entry = '\n127.0.0.1 shiny.local';
+    const entry = '\n127.0.0.1 aioli.local';
     
     // Check if already exists
     if (await checkHostsEntry()) {
@@ -81,13 +76,13 @@ async function addHostsEntry() {
     } else {
       console.warn('⚠ Failed to add hosts file entry. You may need to add it manually.');
       console.warn('  Add this line to C:\\Windows\\System32\\drivers\\etc\\hosts:');
-      console.warn('  127.0.0.1 shiny.local');
+      console.warn('  127.0.0.1 aioli.local');
       return false;
     }
   } catch (error) {
     console.warn('⚠ Failed to automatically add hosts file entry:', error.message);
     console.warn('  Please add this line to C:\\Windows\\System32\\drivers\\etc\\hosts manually:');
-    console.warn('  127.0.0.1 shiny.local');
+    console.warn('  127.0.0.1 aioli.local');
     return false;
   }
 }
@@ -102,26 +97,23 @@ function createDefaultConfig() {
   }
 
   const defaultConfig = {
-    "counterFilePath": path.join(txtPath, 'shiny.txt'),
-    "pokemonImage": "img/pokemon.png",
-    "failedCatchesFilePath": "txt/failed_catches.txt",
-    "lastShinyImage": "img/last_shiny.png",
-    "livingDexCount": "txt/living_dex.txt",
-    "livingDexTotal": 0,
-    "sections": {
-      "currentHunt": true,
-      "failedAttempts": false,
-      "lastShiny": true,
-      "livingDex": false
-    }
+    "sections": [
+      {
+        "title": "Counter",
+        "image": null,
+        "counter1": "txt/counter.txt",
+        "counter2": null,
+        "separator": null
+      }
+    ]
   };
 
   try {
     fs.writeFileSync(configPath, JSON.stringify(defaultConfig, null, 2));
-    fs.mkdirSync(imgPath);
-    fs.mkdirSync(txtPath);
+    fs.mkdirSync(imgPath, { recursive: true });
+    fs.mkdirSync(txtPath, { recursive: true });
     console.log('✓ Created default config.json template and img/ and txt/ folders');
-    console.log('  Please edit config.json to point to your files and images.');
+    console.log('  Please edit config.json to configure your sections.');
     console.log('  Text files and images need to be in the img/ and txt/ folders next to the executable.');
   } catch (error) {
     console.error('Error creating default config.json:', error.message);
@@ -131,29 +123,20 @@ function createDefaultConfig() {
 // Load configuration
 let config = {};
 
-function getSectionConfig() {
-  const sectionConfig = config.sections && typeof config.sections === 'object'
-    ? config.sections
-    : {};
-
-  return Object.entries({ ...defaultSectionConfig, ...sectionConfig }).reduce(
-    (acc, [key, value]) => {
-      acc[key] = Boolean(value);
-      return acc;
-    },
-    {}
-  );
-}
-
 function loadConfig() {
   try {
     const configPath = path.join(basePath, 'config.json');
     const newConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     config = newConfig;
+    
+    // Validate sections array
+    if (!Array.isArray(config.sections)) {
+      console.error('Error: config.sections must be an array');
+      return false;
+    }
+    
     console.log('✓ Config reloaded successfully');
-    console.log(`  Counter file: ${config.counterFilePath || 'Not configured'}`);
-    console.log(`  Pokemon image: ${config.pokemonImage || 'Not configured'}`);
-    console.log(`  Sections: ${JSON.stringify(getSectionConfig())}`);
+    console.log(`  Sections: ${config.sections.length}`);
     return true;
   } catch (error) {
     console.error('Error loading config.json:', error.message);
@@ -163,7 +146,7 @@ function loadConfig() {
 }
 
 // First-run setup
-console.log('Starting Pokemon Shiny Hunt Tracker...');
+console.log('Starting Aioli Overlay...');
 if (isPkg) {
   console.log('Running as standalone executable');
 }
@@ -201,13 +184,32 @@ if (fs.existsSync(configPath)) {
   });
 }
 
-// API endpoint to get counter value
+// API endpoint to get all sections configuration
+app.get('/api/sections', (_req, res) => {
+  try {
+    if (!Array.isArray(config.sections)) {
+      return res.status(500).json({ error: 'Invalid sections configuration' });
+    }
+    res.json({ sections: config.sections });
+  } catch (error) {
+    console.error('Error serving sections configuration:', error.message);
+    res.status(500).json({ error: 'Failed to load sections configuration' });
+  }
+});
+
+// API endpoint to get counter value from a file path
 app.get('/api/counter', (req, res) => {
   try {
-    const counterPath = resolvePath(config.counterFilePath);
+    const filePath = req.query.path;
+    
+    if (!filePath) {
+      return res.status(400).json({ error: 'File path parameter required' });
+    }
+
+    const counterPath = resolvePath(filePath);
     
     if (!counterPath) {
-      return res.status(500).json({ error: 'Counter file path not configured' });
+      return res.status(500).json({ error: 'Invalid file path' });
     }
 
     // Check if file exists
@@ -224,127 +226,37 @@ app.get('/api/counter', (req, res) => {
   }
 });
 
-// API endpoint to get Pokemon image info
-app.get('/api/pokemon', (req, res) => {
+// API endpoint to get image path
+app.get('/api/image', (req, res) => {
   try {
-    const pokemonImage = resolvePath(config.pokemonImage);
+    const filePath = req.query.path;
     
-    if (!pokemonImage) {
-      return res.status(500).json({ error: 'Pokemon image path not configured' });
+    if (!filePath) {
+      return res.json({ imagePath: '' });
     }
 
-    // Check if image file exists
-    if (!fs.existsSync(pokemonImage)) {
-      return res.status(404).json({ error: 'Pokemon image not found' });
-    }
-
-    // Return path relative to basePath, normalized for web (forward slashes)
-    const relativePath = path.relative(basePath, pokemonImage).replace(/\\/g, '/');
-    res.json({ imagePath: relativePath });
-  } catch (error) {
-    console.error('Error reading Pokemon image:', error.message);
-    res.status(500).json({ error: 'Failed to read Pokemon image' });
-  }
-});
-
-// API endpoint to get failed catches counter
-app.get('/api/failed-catches', (req, res) => {
-  try {
-    const failedCatchesPath = resolvePath(config.failedCatchesFilePath);
+    const imagePath = resolvePath(filePath);
     
-    if (!failedCatchesPath) {
-      return res.status(500).json({ error: 'Failed catches file path not configured' });
-    }
-
-    // Check if file exists
-    if (!fs.existsSync(failedCatchesPath)) {
-      return res.status(404).json({ error: 'Failed catches file not found' });
-    }
-
-    // Read failed catches value
-    const failedCatchesValue = fs.readFileSync(failedCatchesPath, 'utf8').trim();
-    res.json({ count: failedCatchesValue });
-  } catch (error) {
-    console.error('Error reading failed catches file:', error.message);
-    res.status(500).json({ error: 'Failed to read failed catches file' });
-  }
-});
-
-// API endpoint to get section configuration
-app.get('/api/config/sections', (_req, res) => {
-  try {
-    res.json({ sections: getSectionConfig() });
-  } catch (error) {
-    console.error('Error serving section configuration:', error.message);
-    res.status(500).json({ error: 'Failed to load section configuration' });
-  }
-});
-
-// API endpoint to get last shiny Pokemon image info
-app.get('/api/last-shiny', (req, res) => {
-  try {
-    const lastShinyImage = resolvePath(config.lastShinyImage);
-    
-    if (!lastShinyImage || lastShinyImage === '') {
+    if (!imagePath) {
       return res.json({ imagePath: '' });
     }
 
     // Check if image file exists
-    if (!fs.existsSync(lastShinyImage)) {
-      return res.status(404).json({ error: 'Last shiny image not found' });
+    if (!fs.existsSync(imagePath)) {
+      return res.status(404).json({ error: 'Image file not found' });
     }
 
     // Return path relative to basePath, normalized for web (forward slashes)
-    const relativePath = path.relative(basePath, lastShinyImage).replace(/\\/g, '/');
+    const relativePath = path.relative(basePath, imagePath).replace(/\\/g, '/');
     res.json({ imagePath: relativePath });
   } catch (error) {
-    console.error('Error reading last shiny image:', error.message);
-    res.status(500).json({ error: 'Failed to read last shiny image' });
-  }
-});
-
-// API endpoint to get living dex info
-app.get('/api/living-dex', (req, res) => {
-  try {
-    const sections = getSectionConfig();
-    if (!sections.livingDex) {
-      return res.status(404).json({ error: 'Living dex section disabled' });
-    }
-
-    const livingDexCountPath = resolvePath(config.livingDexCount);
-    const livingDexTotalRaw = config.livingDexTotal;
-
-    if (!livingDexCountPath) {
-      return res.status(500).json({ error: 'Living dex count file path not configured' });
-    }
-
-    const livingDexTotal = Number(livingDexTotalRaw);
-    if (!Number.isFinite(livingDexTotal) || livingDexTotal < 0) {
-      return res.status(500).json({ error: 'Living dex total must be a non-negative number' });
-    }
-
-    if (!fs.existsSync(livingDexCountPath)) {
-      return res.status(404).json({ error: 'Living dex count file not found' });
-    }
-
-    const rawCount = fs.readFileSync(livingDexCountPath, 'utf8').trim();
-    const livingDexCount = parseInt(rawCount, 10);
-
-    if (Number.isNaN(livingDexCount) || livingDexCount < 0) {
-      return res.status(500).json({ error: 'Living dex count file must contain a non-negative integer' });
-    }
-
-    res.json({ count: livingDexCount, total: livingDexTotal });
-  } catch (error) {
-    console.error('Error reading living dex data:', error.message);
-    res.status(500).json({ error: 'Failed to read living dex data' });
+    console.error('Error reading image:', error.message);
+    res.status(500).json({ error: 'Failed to read image' });
   }
 });
 
 app.listen(PORT, () => {
-  console.log(`Pokemon Shiny Hunt Tracker server running on http://shiny.local`);
+  console.log(`Aioli Overlay server running on http://aioli.local`);
   console.log('Add this URL as a link source in TikTok Live Studio');
-  console.log(`Counter file: ${config.counterFilePath || 'Not configured'}`);
-  console.log(`Pokemon image: ${config.pokemonImage || 'Not configured'}`);
-  console.log(`Sections: ${JSON.stringify(getSectionConfig())}`);
+  console.log(`Sections configured: ${config.sections ? config.sections.length : 0}`);
 });

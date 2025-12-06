@@ -3,47 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pokemon Shiny Hunt Tracker</title>
+    <title>Aioli Overlay</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="tracker-container">
-        <!-- Current Hunt Section -->
-        <div class="section" id="current-hunt-section">
-            <div class="section-title">Current Hunt</div>
-            <div class="pokemon-display">
-                <img id="pokemon-image" src="" alt="Pokemon" class="pokemon-sprite">
-                <div class="counter-display">
-                    <span id="counter-value">0</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Failed Attempts Section -->
-        <div class="section" id="failed-attempts-section">
-            <div class="section-title">Failed Attempts</div>
-            <div class="counter-display">
-                <span id="failed-catches-value">0</span>
-            </div>
-        </div>
-
-        <!-- Last Shiny Section -->
-        <div class="section" id="last-shiny-section">
-            <div class="section-title">Last Shiny</div>
-            <div class="pokemon-display">
-                <img id="last-shiny-image" class="pokemon-sprite">
-            </div>
-        </div>
-
-        <!-- Shiny Living Dex Section -->
-        <div class="section" id="living-dex-section">
-            <div class="section-title">Shiny Living Dex</div>
-            <div class="ratio-display">
-                <span id="living-dex-count">0</span>
-                <span class="ratio-separator">/</span>
-                <span id="living-dex-total">0</span>
-            </div>
-        </div>
+    <div class="tracker-container" id="tracker-container">
+        <!-- Sections will be dynamically generated here -->
     </div>
     <script src="script.js"></script>
 </body>

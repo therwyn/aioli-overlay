@@ -1,6 +1,6 @@
-# Pokemon Shiny Hunt Overlay
+# Aioli Overlay
 
-A simple web-based overlay for Pokemon shiny hunts designed for streaming with TikTok Live Studio. Features a transparent background and real-time counter updates from a text file.
+A customizable web-based overlay tracker designed for streaming with TikTok Live Studio. Features a transparent background and real-time counter updates from text files. Perfect for tracking lives, deaths, levels, shiny hunts, or anything else you want to track.
 
 ## Setup Instructions
 
@@ -10,23 +10,27 @@ A simple web-based overlay for Pokemon shiny hunts designed for streaming with T
    npm install
    ```
 
-2. **Configure File Paths**
+2. **Configure Sections**
 
-   Create a `config.json` file to set your file paths:
+   Create a `config.json` file to define your custom sections:
    ```json
    {
-     "counterFilePath": "path/to/your/counter.txt",
-     "pokemonImage": "path/to/your/pokemon.png",
-     "failedCatchesFilePath": "path/to/your/failed_catches.txt",
-     "lastShinyImage": "path/to/your/last_shiny.png",
-     "livingDexCount": "path/to/your/living_dex_count.txt",
-     "livingDexTotal": 0,
-     "sections": {
-       "currentHunt": true,
-       "failedAttempts": true,
-       "lastShiny": true,
-       "livingDex": false
-     }
+     "sections": [
+       {
+         "title": "Current Hunt",
+         "image": "img/character.png",
+         "counter1": "txt/counter.txt",
+         "counter2": null,
+         "separator": null
+       },
+       {
+         "title": "Progress",
+         "image": null,
+         "counter1": "txt/current.txt",
+         "counter2": 100,
+         "separator": "/"
+       }
+     ]
    }
    ```
 
@@ -34,9 +38,9 @@ A simple web-based overlay for Pokemon shiny hunts designed for streaming with T
 
    Add the following to your hosts file:
    ```text
-   127.0.0.1 shiny.local # feel free to change the domain to whatever you want
+   127.0.0.1 aioli.local
    ```
-   This will allow you to access the overlay at `http://shiny.local` (or whatever you changed the domain to) from your browser, as TikTok Live Studio requires a "valid" URL.
+   This will allow you to access the overlay at `http://aioli.local` from your browser, as TikTok Live Studio requires a "valid" URL.
 
 4. **Start the Server**
 
@@ -49,29 +53,31 @@ A simple web-based overlay for Pokemon shiny hunts designed for streaming with T
    - Open TikTok Live Studio
    - Add a new source
    - Choose "Link" as the source type
-   - Enter: `http://shiny.local` (or whatever you changed the domain to)
+   - Enter: `http://aioli.local`
    - The overlay will appear with a transparent background
 
 ## Usage
 
-- The counter updates automatically every second by reading from your text files
-- When you update the Pokemon image file path in `config.json`, the new image will load automatically
+- Each section can have a title, optional image, and up to two counters
+- Counters update automatically every second by reading from your text files
+- Images update automatically every 5 seconds
+- If a section has two counters, you can specify a custom separator (e.g., "/", "-", "of")
+- Counter2 can be either a file path (for dynamic values) or a number (for static totals)
 - The background is transparent, perfect for overlaying on your stream
-- Toggle any overlay section on or off by updating the boolean flags under `sections` in `config.json`
-- The shiny living dex section reads the `livingDexCount` text file and displays it alongside the static `livingDexTotal`
-- The last shiny image is updated automatically by reading from your image file
+- Sections are displayed in the order they appear in your config.json
 
 ## File Structure
 
 ```
-shiny-overlay/
+aioli-overlay/
 ├── package.json          # Dependencies and scripts
 ├── server.js             # Express server
 ├── index.html            # Main HTML page
 ├── style.css             # Styling
 ├── script.js             # Client-side JavaScript
 ├── config.json           # Configuration file
-└── README.md             # This file
+├── img/                  # Image files folder
+└── txt/                  # Counter text files folder
 ```
 
 ## Building Standalone Executable
@@ -93,7 +99,7 @@ To create a standalone Windows executable that doesn't require Node.js installat
    npm run build:exe
    ```
 
-   This will create `dist/pokemon-shiny-hunt-tracker.exe` (or similar name based on package.json name).
+   This will create `dist/aioli-overlay.exe` (or similar name based on package.json name).
 
 4. **Distribute the executable**:
    - The executable bundles Node.js runtime and all web files (HTML, CSS, JS)
@@ -106,22 +112,20 @@ To create a standalone Windows executable that doesn't require Node.js installat
 
 ### User Instructions for Executable
 
-1. Download and place `pokemon-shiny-hunt-tracker.exe` in a folder
+1. Download and place `aioli-overlay.exe` in a folder
 2. Double-click to run (may prompt for admin to edit hosts file)
 3. A `config.json` template will be created if missing
 4. Create `img/` and `txt/` folders next to the executable
-5. Add your Pokemon images to `img/` folder
-6. Add your counter files to `txt/` folder (e.g., `shiny.txt`, `failed_catches.txt`)
-7. Edit `config.json` to point to your files (paths can be relative to the executable)
+5. Add your images to `img/` folder
+6. Add your counter files to `txt/` folder (e.g., `counter.txt`, `lives.txt`)
+7. Edit `config.json` to configure your sections (paths can be relative to the executable)
 8. Run the executable again
-9. Open TikTok Live Studio and add `http://shiny.local` as a link source
-
-**Note**: The executable does not include any Pokemon images or copyrighted materials. Users must provide their own images and text files.
+9. Open TikTok Live Studio and add `http://aioli.local` as a link source
 
 ## Troubleshooting
 
 - Make sure the counter file exists and contains only a number
-- Ensure the Pokemon image file exists at the specified path
+- Ensure image files exist at the specified paths
 - Check that port 80 is not being used by another application
 - Verify file paths in `config.json` are correct (use absolute paths if needed)
 - Verify the domain is correct in your hosts file

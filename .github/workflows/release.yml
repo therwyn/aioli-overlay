@@ -79,17 +79,17 @@ jobs:
             ## Setup Instructions
             
             After first run, the executable will create:
-            - `config.json` template (edit this to configure your file paths)
-            - `img/` folder (place your Pokemon images here)
-            - `txt/` folder (place your counter files here, e.g., `shiny.txt`, `failed_catches.txt`)
+            - `config.json` template (edit this to configure your sections)
+            - `img/` folder (place your images here)
+            - `txt/` folder (place your counter files here, e.g., `counter.txt`, `lives.txt`)
             
-            Edit `config.json` to point to your files and images, then run the executable again.
+            Edit `config.json` to configure your custom sections with titles, images, and counters, then run the executable again.
             
             ## Usage
             
-            Once running, add `http://shiny.local` as a link source in TikTok Live Studio.
+            Once running, add `http://aioli.local` as a link source in TikTok Live Studio.
             
-            **Note:** This executable does not include any Pokemon images or copyrighted materials. You must provide your own images and text files.
+            **Note:** This executable does not include any images or copyrighted materials. You must provide your own images and text files.
           files: dist/${{ steps.find-exe.outputs.exe-name }}
           draft: false
           prerelease: false

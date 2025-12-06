@@ -30,14 +30,23 @@ body {
 }
 
 .section-title {
-    font-size: 24px;
+    font-size: 28px;
     font-weight: bold;
     color: #ffffff;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
     text-align: center;
 }
 
-.pokemon-display {
+.section-subtitle {
+    font-size: 18px;
+    font-weight: normal;
+    color: #ffffff;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    text-align: center;
+    opacity: 0.9;
+}
+
+.image-display {
     display: flex;
     align-items: center;
     gap: 20px;
@@ -49,13 +58,14 @@ body {
     justify-content: center;
 }
 
-.pokemon-display .counter-display {
+.image-display .counter-display,
+.image-display .ratio-display {
     background: transparent;
     border: none;
     padding: 0;
 }
 
-.pokemon-sprite {
+.section-sprite {
     width: 120px;
     height: 120px;
     object-fit: contain;
@@ -101,8 +111,7 @@ body {
     display: inline-block;
 }
 
-#counter-value,
-#failed-catches-value {
+.section-image {
     display: block;
 }
 
