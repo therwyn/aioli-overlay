@@ -1,7 +1,7 @@
 {
-  "name": "pokemon-shiny-hunt-tracker",
-  "version": "1.0.1",
-  "description": "A simple tracker for Pokemon shiny hunts with transparent background for streaming",
+  "name": "aioli-overlay",
+  "version": "2.0.0",
+  "description": "A customizable web-based overlay tracker designed for streaming with TikTok Live Studio. Features a transparent background and real-time counter updates from text files. Perfect for tracking lives, deaths, levels, shiny hunts, or anything else you want to track.",
   "main": "server.js",
   "bin": "server.js",
   "scripts": {
@@ -26,7 +26,7 @@
     "targets": ["node18-win-x64"],
     "outputPath": "dist"
   },
-  "keywords": ["pokemon", "shiny", "tracker", "streaming"],
-  "author": "",
+  "keywords": ["aioli", "overlay", "tracker", "streaming", "tiktok", "live", "studio"],
+  "author": "therwyn",
   "license": "MIT"
 }
