@@ -166,10 +166,12 @@ function renderSections() {
         sectionElement.setAttribute('data-section-index', index);
         
         // Create section title
-        const titleElement = document.createElement('div');
-        titleElement.className = 'section-title';
-        titleElement.textContent = sectionConfig.title || 'Section';
-        sectionElement.appendChild(titleElement);
+        if (sectionConfig.title && sectionConfig.title !== null) {
+            const titleElement = document.createElement('div');
+            titleElement.className = 'section-title';
+            titleElement.textContent = sectionConfig.title;
+            sectionElement.appendChild(titleElement);
+        }
         
         // Create section subtitle if provided
         if (sectionConfig.subtitle && sectionConfig.subtitle !== null) {
