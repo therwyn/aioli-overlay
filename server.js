@@ -103,7 +103,8 @@ function createDefaultConfig() {
         "image": null,
         "counter1": "txt/counter.txt",
         "counter2": null,
-        "separator": null
+        "separator": null,
+        "backgroundAlpha": 100
       }
     ]
   };

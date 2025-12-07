@@ -29,6 +29,29 @@ async function fetchSectionsConfig() {
     return false;
 }
 
+// Convert alpha value from 0-100 to 0.00-1.00
+function convertAlpha(alpha) {
+    // Convert 0-100 to 0.00-1.00
+    // 0 = 0.00 (fully transparent, no background), 1-100 = 0.01-1.00 (fully opaque)
+    let alphaValue = Math.max(0, Math.min(100, parseInt(alpha)));
+    console.log("alpha value is", alphaValue);
+    if (alphaValue === 0) {
+        return 0.00;
+    }
+    // Map 1-100 to 0.01-1.00
+    alphaValue = 0.01 + ((alphaValue - 1) / 99) * 0.99;
+    console.log("alpha value is now", alphaValue);
+    return alphaValue;
+}
+
+// Apply background alpha to a display element
+function applySectionBackgroundAlpha(displayElement, alpha) {
+    if (!displayElement || alpha === undefined) return;
+    let alphaValue = convertAlpha(alpha);
+    console.log("alpha value is now", alphaValue);
+    displayElement.style.backgroundColor = `rgba(0, 0, 0, ${alphaValue})`;
+}
+
 // Generic function to fetch counter value from a file path
 async function fetchCounter(filePath, sectionIndex, counterKey) {
     try {
@@ -277,6 +300,18 @@ function renderSections() {
         }
         
         if (displayElement) {
+            // Apply per-section background alpha if specified
+            // Apply to the main display element and any nested display elements
+            if (sectionConfig.backgroundAlpha !== undefined) {
+                console.log("applying background alpha to display element", sectionConfig.backgroundAlpha);
+                applySectionBackgroundAlpha(displayElement, sectionConfig.backgroundAlpha);
+                // Also apply to nested display elements (e.g., ratio-display inside image-display)
+                const nestedDisplays = displayElement.querySelectorAll('.image-display, .counter-display, .ratio-display');
+                nestedDisplays.forEach(nested => {
+                    console.log("applying background alpha to nested display element", sectionConfig.backgroundAlpha);
+                    applySectionBackgroundAlpha(nested, sectionConfig.backgroundAlpha);
+                });
+            }
             sectionElement.appendChild(displayElement);
         }
         

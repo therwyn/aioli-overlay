@@ -6,9 +6,9 @@
 }
 
 body {
-    background: transparent;
     font-family: 'Arial', sans-serif;
     overflow: hidden;
+    background: transparent !important;
 }
 
 .tracker-container {
@@ -17,7 +17,6 @@ body {
     justify-content: flex-start;
     align-items: flex-end;
     min-height: 100vh;
-    background: transparent;
     padding: 20px;
     gap: 20px;
 }
@@ -46,23 +45,8 @@ body {
     opacity: 0.9;
 }
 
-.image-display {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    background: rgba(0, 0, 0, 0.1);
-    padding: 15px;
-    border-radius: 10px;
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    width: 300px;
-    justify-content: center;
-}
-
-.image-display .counter-display,
-.image-display .ratio-display {
-    background: transparent;
-    border: none;
-    padding: 0;
+.image-display, .counter-display, .ratio-display {
+    background: rgba(0, 0, 0, var(--section-background-alpha, 0.1));
 }
 
 .section-sprite {
@@ -74,13 +58,23 @@ body {
     image-rendering: crisp-edges;
 }
 
+.image-display {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 15px;
+    border-radius: 10px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    width: 300px;
+    justify-content: center;
+}
+
 .counter-display {
     font-size: 48px;
     font-weight: bold;
     color: #ffffff;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
     text-align: center;
-    background: rgba(0, 0, 0, 0.1);
     padding: 15px;
     border-radius: 10px;
     border: 2px solid rgba(255, 255, 255, 0.2);
@@ -96,7 +90,6 @@ body {
     color: #ffffff;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
     text-align: center;
-    background: rgba(0, 0, 0, 0.1);
     padding: 15px;
     border-radius: 10px;
     border: 2px solid rgba(255, 255, 255, 0.2);
@@ -113,12 +106,4 @@ body {
 
 .section-image {
     display: block;
-}
-
-
-/* Transparent background for streaming */
-.tracker-container,
-body,
-html {
-    background: transparent !important;
 }
