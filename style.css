@@ -46,7 +46,7 @@ body {
 }
 
 .image-display, .counter-display, .ratio-display {
-    background: rgba(0, 0, 0, var(--section-background-alpha, 0.1));
+    background: rgba(0, 0, 0, 0.1); /* Default alpha, can be overridden by inline styles per section */
 }
 
 .section-sprite {

@@ -32,8 +32,8 @@ jobs:
         run: |
           $tag = "${{ github.ref_name }}"
           $version = $tag -replace '^v', ''
-          $beta = $version -contains 'beta'
-          $prerelease = $beta -or $version -contains 'alpha'
+          $beta = $version -like '*beta*'
+          $prerelease = $beta -or $version -like '*alpha*'
           echo "version=$version" >> $env:GITHUB_OUTPUT
           echo "prerelease=$prerelease" >> $env:GITHUB_OUTPUT
           echo "Tag: $tag"
