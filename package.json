@@ -1,6 +1,6 @@
 {
   "name": "aioli-overlay",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "A customizable web-based overlay tracker designed for streaming with TikTok Live Studio. Features a transparent background and real-time counter updates from text files. Perfect for tracking lives, deaths, levels, shiny hunts, or anything else you want to track.",
   "main": "server.js",
   "bin": "server.js",

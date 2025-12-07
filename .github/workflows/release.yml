@@ -32,7 +32,10 @@ jobs:
         run: |
           $tag = "${{ github.ref_name }}"
           $version = $tag -replace '^v', ''
+          $beta = $version -contains 'beta'
+          $prerelease = $beta -or $version -contains 'alpha'
           echo "version=$version" >> $env:GITHUB_OUTPUT
+          echo "prerelease=$prerelease" >> $env:GITHUB_OUTPUT
           echo "Tag: $tag"
           echo "Version: $version"
       
@@ -92,7 +95,7 @@ jobs:
             **Note:** This executable does not include any images or copyrighted materials. You must provide your own images and text files.
           files: dist/${{ steps.find-exe.outputs.exe-name }}
           draft: false
-          prerelease: false
+          prerelease: ${{ steps.tag-version.outputs.prerelease }}
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
