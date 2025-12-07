@@ -58,12 +58,12 @@ A customizable web-based overlay tracker designed for streaming with TikTok Live
 
 ## Usage
 
-- Each section can have a title, optional image, and up to two counters
+- Each section supports a title, subtitle, image, and up to two counters
+- All sections are optional, so you can have as many or as few as you want (but you obviously need at least one)
 - Counters update automatically every second by reading from your text files
 - Images update automatically every 5 seconds
 - If a section has two counters, you can specify a custom separator (e.g., "/", "-", "of")
 - Counter2 can be either a file path (for dynamic values) or a number (for static totals)
-- The background is transparent, perfect for overlaying on your stream
 - Sections are displayed in the order they appear in your config.json
 
 ## File Structure
@@ -79,36 +79,6 @@ aioli-overlay/
 ├── img/                  # Image files folder
 └── txt/                  # Counter text files folder
 ```
-
-## Building Standalone Executable
-
-To create a standalone Windows executable that doesn't require Node.js installation:
-
-1. **Install pkg globally** (if not already installed):
-   ```bash
-   npm install -g pkg
-   ```
-
-2. **Install dev dependencies**:
-   ```bash
-   npm install
-   ```
-
-3. **Build the executable**:
-   ```bash
-   npm run build:exe
-   ```
-
-   This will create `dist/aioli-overlay.exe` (or similar name based on package.json name).
-
-4. **Distribute the executable**:
-   - The executable bundles Node.js runtime and all web files (HTML, CSS, JS)
-   - Users only need the `.exe` file - no Node.js installation required
-   - Users should place their own images and text files in folders next to the executable
-   - The executable will automatically:
-     - Create a default `config.json` template on first run
-     - Attempt to add the hosts file entry (may require admin elevation)
-     - Start the server on port 80
 
 ### User Instructions for Executable
 
