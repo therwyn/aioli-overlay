@@ -60,6 +60,7 @@ A customizable web-based overlay tracker designed for streaming with TikTok Live
 
 - Each section supports a title, subtitle, image, and up to two counters
 - All sections are optional, so you can have as many or as few as you want (but you obviously need at least one)
+- You can set the background alpha for each section from 0 to 100 (0 = fully transparent, 100 = fully opaque)
 - Counters update automatically every second by reading from your text files
 - Images update automatically every 5 seconds
 - If a section has two counters, you can specify a custom separator (e.g., "/", "-", "of")

@@ -99,12 +99,12 @@ function createDefaultConfig() {
   const defaultConfig = {
     "sections": [
       {
-        "title": "Counter",
+        "title": "Example Section",
         "image": null,
-        "counter1": "txt/counter.txt",
+        "counter1": null,
         "counter2": null,
         "separator": null,
-        "backgroundAlpha": 100
+        "backgroundAlpha": 10
       }
     ]
   };
