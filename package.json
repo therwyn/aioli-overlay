@@ -10,7 +10,7 @@
     "build:exe": "pkg . --targets node18-win-x64 --output-path dist"
   },
   "dependencies": {
-    "express": "^4.18.2",
+    "express": "^4.22.1",
     "cors": "^2.8.5"
   },
   "devDependencies": {
